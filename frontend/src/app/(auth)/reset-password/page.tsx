@@ -1,14 +1,8 @@
 "use client";
 
-import {
-  FormEvent,
-  Suspense,
-  useState,
-} from "react";
-
+import { FormEvent, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-
 import {
   Lock,
   Eye,
@@ -18,97 +12,46 @@ import {
 } from "lucide-react";
 
 import { resetPassword } from "@/lib/auth";
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense
-      fallback={
-        <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-white">
-          Loading...
-        </main>
-      }
-    >
-      <ResetPasswordForm />
-    </Suspense>
-  );
-}
+import { getApiErrorMessage } from "@/lib/api";
 
 function ResetPasswordForm() {
-  const searchParams =
-    useSearchParams();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
-  const token =
-    searchParams.get("token");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  const [password, setPassword] =
-    useState("");
-
-  const [confirmPassword, setConfirmPassword] =
-    useState("");
-
-  const [showPassword, setShowPassword] =
-    useState(false);
-
-  const [showConfirm, setShowConfirm] =
-    useState(false);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-  const [success, setSuccess] =
-    useState(false);
-
-  async function handleSubmit(
-    e: FormEvent
-  ) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-
     setError("");
 
     if (!token) {
-      setError(
-        "Invalid or missing reset token."
-      );
+      setError("Invalid or missing reset token.");
       return;
     }
 
     if (password.length < 8) {
-      setError(
-        "Password must be at least 8 characters."
-      );
+      setError("Password must be at least 8 characters.");
       return;
     }
 
-    if (
-      password !== confirmPassword
-    ) {
-      setError(
-        "Passwords do not match."
-      );
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
     setLoading(true);
 
     try {
-      await resetPassword(
-        token,
-        password
-      );
-
+      await resetPassword(token, password);
       setSuccess(true);
-    } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
-          : undefined;
-      setError(
-        message ||
-          "Unable to reset password."
-      );
+    } catch (err) {
+      setError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -116,24 +59,22 @@ function ResetPasswordForm() {
 
   if (success) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6">
-        <div className="w-full max-w-md rounded-3xl bg-white p-10 text-center shadow-2xl">
+      <main className="flex min-h-screen items-center justify-center bg-[#0F172A] px-6">
+        <div className="w-full max-w-md rounded-2xl bg-white p-10 text-center shadow-2xl animate-scale-in">
+          <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" />
 
-          <CheckCircle2 className="mx-auto h-16 w-16 text-green-500" />
-
-          <h1 className="mt-6 text-3xl font-bold">
+          <h1 className="mt-6 text-3xl font-bold text-[#0F172A]">
             Password reset successful
           </h1>
 
           <p className="mt-3 text-slate-500">
-            Your password has been changed.
-            You can now login with your new
-            password.
+            Your password has been changed. You can now login with
+            your new password.
           </p>
 
           <Link
             href="/login"
-            className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-xl bg-indigo-600 font-semibold text-white hover:bg-indigo-700"
+            className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#F97316] font-semibold text-white shadow-lg shadow-orange-500/25 transition hover:bg-[#EA580C]"
           >
             Continue to login
           </Link>
@@ -143,44 +84,38 @@ function ResetPasswordForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6">
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
+    <main className="flex min-h-screen items-center justify-center bg-[#0F172A] px-6">
+      <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-[#F97316]/8 blur-3xl" />
 
+      <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl animate-scale-in">
         <div className="mb-8">
-          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
+          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 text-[#F97316]">
             <Lock className="h-7 w-7" />
           </div>
 
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-3xl font-bold text-[#0F172A]">
             Create new password
           </h1>
 
           <p className="mt-2 text-slate-500">
-            Choose a strong password for
-            your account.
+            Choose a strong password for your account.
           </p>
         </div>
 
         {error && (
-          <div className="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">
+          <div className="mb-5 rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700 animate-slide-down">
             {error}
           </div>
         )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5"
-        >
+        <form onSubmit={handleSubmit} className="space-y-5">
           <PasswordInput
             label="New password"
             value={password}
             onChange={setPassword}
             show={showPassword}
-            toggle={() =>
-              setShowPassword(
-                !showPassword
-              )
-            }
+            toggle={() => setShowPassword(!showPassword)}
+            placeholder="At least 8 characters"
           />
 
           <PasswordInput
@@ -188,16 +123,46 @@ function ResetPasswordForm() {
             value={confirmPassword}
             onChange={setConfirmPassword}
             show={showConfirm}
-            toggle={() =>
-              setShowConfirm(
-                !showConfirm
-              )
-            }
+            toggle={() => setShowConfirm(!showConfirm)}
+            placeholder="Re-enter your password"
           />
+
+          {/* Password requirements */}
+          <div className="rounded-xl bg-slate-50 p-3">
+            <p className="text-xs font-semibold text-slate-600 mb-2">
+              Password requirements:
+            </p>
+            <ul className="space-y-1">
+              <li
+                className={`text-xs flex items-center gap-2 ${
+                  password.length >= 8
+                    ? "text-emerald-600"
+                    : "text-slate-400"
+                }`}
+              >
+                <span>{password.length >= 8 ? "✓" : "○"}</span>
+                At least 8 characters
+              </li>
+              <li
+                className={`text-xs flex items-center gap-2 ${
+                  password && password === confirmPassword
+                    ? "text-emerald-600"
+                    : "text-slate-400"
+                }`}
+              >
+                <span>
+                  {password && password === confirmPassword
+                    ? "✓"
+                    : "○"}
+                </span>
+                Passwords match
+              </li>
+            </ul>
+          </div>
 
           <button
             disabled={loading}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#F97316] font-semibold text-white shadow-lg shadow-orange-500/25 transition hover:bg-[#EA580C] disabled:opacity-60"
           >
             {loading ? (
               <>
@@ -220,35 +185,34 @@ function PasswordInput({
   onChange,
   show,
   toggle,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   show: boolean;
   toggle: () => void;
+  placeholder?: string;
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-semibold">
+      <label className="mb-2 block text-sm font-semibold text-[#0F172A]">
         {label}
       </label>
 
       <div className="relative">
         <input
-          type={
-            show ? "text" : "password"
-          }
+          type={show ? "text" : "password"}
           value={value}
-          onChange={(e) =>
-            onChange(e.target.value)
-          }
-          className="h-12 w-full rounded-xl border border-slate-200 px-4 pr-12 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="h-12 w-full rounded-xl border border-slate-200 px-4 pr-12 text-sm outline-none transition focus:border-[#F97316] focus:ring-4 focus:ring-orange-100"
         />
 
         <button
           type="button"
           onClick={toggle}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-400"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-400 transition hover:text-slate-600"
         >
           {show ? (
             <EyeOff className="h-5 w-5" />
@@ -258,5 +222,19 @@ function PasswordInput({
         </button>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-[#0F172A]">
+          <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+        </main>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

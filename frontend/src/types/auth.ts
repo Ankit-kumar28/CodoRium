@@ -24,8 +24,34 @@ export interface LoginResponse {
 
 export interface ApiError {
   message: string;
-  errors?: Record<
-    string,
-    string[]
-  >;
+  errors?: Record<string, string[]>;
+}
+
+/* =========================
+   ADMIN TYPES
+========================= */
+
+export type AdminAssignableRole =
+  | "STUDENT"
+  | "PROBLEM_SETTER"
+  | "FACULTY";
+
+export interface GenerateCredentialsPayload {
+  firstName: string;
+  lastName?: string;
+  email: string;
+  roles: AdminAssignableRole[];
+}
+
+export interface GeneratedUser {
+  id: string;
+  firstName: string;
+  lastName: string | null;
+  email: string;
+  roles: AdminAssignableRole[];
+}
+
+export interface GenerateCredentialsResponse {
+  user: GeneratedUser;
+  temporaryPassword: string;
 }

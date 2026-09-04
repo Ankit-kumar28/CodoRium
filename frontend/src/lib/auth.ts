@@ -1,42 +1,19 @@
 import api from "./api";
-
-import type { UserRole } from "@/types/auth";
-
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string | null;
-  roles: UserRole[];
-}
-
-export interface LoginPayload {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  message: string;
-  data: {
-    user: User;
-    accessToken: string;
-    requiresRoleSelection?: boolean;
-  };
-}
-
-export interface MeResponse {
-  message?: string;
-  data?: User;
-  user?: User;
-}
+import type {
+  User,
+  LoginResponse,
+  GenerateCredentialsPayload,
+  GenerateCredentialsResponse,
+} from "@/types/auth";
 
 /* =========================
    LOGIN
 ========================= */
 
-export async function login(
-  payload: LoginPayload
-): Promise<LoginResponse> {
+export async function login(payload: {
+  email: string;
+  password: string;
+}): Promise<LoginResponse> {
   const response = await api.post<LoginResponse>(
     "/auth/login",
     payload
@@ -71,12 +48,17 @@ export async function logout() {
    CURRENT USER
 ========================= */
 
-export async function getMe() {
-  const response = await api.get<MeResponse>(
-    "/auth/me"
-  );
+export async function getMe(): Promise<User> {
+  const response = await api.get("/auth/me");
 
-  return response.data;
+  // Backend returns { data: { id, email, firstName, lastName, roles[] } }
+  const userData = response.data?.data;
+
+  if (!userData) {
+    throw new Error("User not found");
+  }
+
+  return userData as User;
 }
 
 /* =========================
@@ -84,22 +66,14 @@ export async function getMe() {
 ========================= */
 
 export async function refreshToken() {
-  const response = await api.post(
-    "/auth/refresh"
-  );
+  const response = await api.post("/auth/refresh");
 
   const token =
     response.data?.data?.accessToken ||
     response.data?.accessToken;
 
-  if (
-    token &&
-    typeof window !== "undefined"
-  ) {
-    localStorage.setItem(
-      "accessToken",
-      token
-    );
+  if (token && typeof window !== "undefined") {
+    localStorage.setItem("accessToken", token);
   }
 
   return response.data;
@@ -109,15 +83,10 @@ export async function refreshToken() {
    FORGOT PASSWORD
 ========================= */
 
-export async function forgotPassword(
-  email: string
-) {
-  const response = await api.post(
-    "/auth/forgot-password",
-    {
-      email,
-    }
-  );
+export async function forgotPassword(email: string) {
+  const response = await api.post("/auth/forgot-password", {
+    email,
+  });
 
   return response.data;
 }
@@ -130,13 +99,10 @@ export async function resetPassword(
   token: string,
   newPassword: string
 ) {
-  const response = await api.post(
-    "/auth/reset-password",
-    {
-      token,
-      newPassword,
-    }
-  );
+  const response = await api.post("/auth/reset-password", {
+    token,
+    newPassword,
+  });
 
   return response.data;
 }
@@ -149,13 +115,27 @@ export async function changePassword(
   currentPassword: string,
   newPassword: string
 ) {
-  const response = await api.post(
-    "/auth/change-password",
-    {
-      currentPassword,
-      newPassword,
-    }
-  );
+  const response = await api.post("/auth/change-password", {
+    currentPassword,
+    newPassword,
+  });
 
   return response.data;
 }
+
+/* =========================
+   ADMIN: GENERATE CREDENTIALS
+========================= */
+
+export async function generateCredentials(
+  payload: GenerateCredentialsPayload
+): Promise<GenerateCredentialsResponse> {
+  const response = await api.post<{
+    message: string;
+    data: GenerateCredentialsResponse;
+  }>("/admin/credentials", payload);
+
+  return response.data.data;
+}
+
+export type { User };

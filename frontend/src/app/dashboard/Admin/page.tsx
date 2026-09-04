@@ -67,8 +67,7 @@ export default function AdminPage() {
           return;
         }
 
-        const response = await getMe();
-        const user = response.data || response.user;
+        const user = await getMe();
 
         if (!user?.roles.includes("ADMIN")) {
           setAccessError("This account does not have administrator access.");

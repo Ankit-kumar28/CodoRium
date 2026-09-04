@@ -3,182 +3,169 @@
 import { create } from "zustand";
 
 import {
-  User,
   login as loginApi,
   logout as logoutApi,
+  getMe,
 } from "@/lib/auth";
 
-import type { UserRole } from "@/types/auth";
-
-const USER_STORAGE_KEY = "codorium_user";
-
-function getStoredUser(): User | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const value = localStorage.getItem(USER_STORAGE_KEY);
-    return value ? (JSON.parse(value) as User) : null;
-  } catch {
-    localStorage.removeItem(USER_STORAGE_KEY);
-    return null;
-  }
-}
-
-function getStoredToken(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return localStorage.getItem("accessToken");
-}
+import type { User, UserRole } from "@/types/auth";
 
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   selectedRole: UserRole | null;
   loading: boolean;
+  initialized: boolean;
 
+  /* Computed helpers */
+  isAuthenticated: boolean;
+
+  /* Actions */
   setUser: (user: User | null) => void;
   setSelectedRole: (role: UserRole) => void;
-  clearAuth: () => void;
 
   login: (
     email: string,
     password: string
-  ) => Promise<User>;
+  ) => Promise<{
+    user: User;
+    requiresRoleSelection: boolean;
+  }>;
 
   logout: () => Promise<void>;
 
-  initialize: () => void;
+  fetchUser: () => Promise<User | null>;
+
+  initialize: () => Promise<void>;
+
+  /* Role helpers */
+  hasRole: (role: UserRole) => boolean;
 }
 
-export const useAuthStore =
-  create<AuthState>((set) => ({
-    user: getStoredUser(),
-    accessToken: getStoredToken(),
-    selectedRole: null,
-    loading: false,
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  accessToken: null,
+  selectedRole: null,
+  loading: false,
+  initialized: false,
+  isAuthenticated: false,
 
-    setUser: (user) => {
-      if (typeof window !== "undefined") {
-        if (user) {
-          localStorage.setItem(
-            USER_STORAGE_KEY,
-            JSON.stringify(user)
-          );
-        } else {
-          localStorage.removeItem(USER_STORAGE_KEY);
-        }
-      }
+  setUser: (user) =>
+    set({
+      user,
+      isAuthenticated: !!user,
+    }),
 
-      set({ user });
-    },
+  setSelectedRole: (role) =>
+    set({ selectedRole: role }),
 
-    setSelectedRole: (selectedRole) =>
-      set({
-        selectedRole,
-      }),
+  login: async (email, password) => {
+    set({ loading: true });
 
-    clearAuth: () =>
-      set(() => {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(USER_STORAGE_KEY);
-          localStorage.removeItem("accessToken");
-        }
-
-        return {
-          user: null,
-          accessToken: null,
-          selectedRole: null,
-          loading: false,
-        };
-      }),
-
-    login: async (
-      email,
-      password
-    ) => {
-      set({
-        loading: true,
+    try {
+      const response = await loginApi({
+        email,
+        password,
       });
 
-      try {
-        const response =
-          await loginApi({
-            email,
-            password,
-          });
-
-        const user =
-          response.data.user;
-
-        const token =
-          response.data.accessToken;
-
-        set({
-          user,
-          accessToken: token,
-          loading: false,
-        });
-
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            USER_STORAGE_KEY,
-            JSON.stringify(user)
-          );
-        }
-
-        return user;
-      } catch (error) {
-        set({
-          loading: false,
-        });
-
-        throw error;
-      }
-    },
-
-    logout: async () => {
-      set({
-        loading: true,
-      });
-
-      try {
-        await logoutApi();
-      } finally {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(USER_STORAGE_KEY);
-          localStorage.removeItem("accessToken");
-        }
-
-        set({
-          user: null,
-          accessToken: null,
-          selectedRole: null,
-          loading: false,
-        });
-      }
-    },
-
-    initialize: () => {
-      if (
-        typeof window === "undefined"
-      ) {
-        return;
-      }
-
-      const token =
-        localStorage.getItem(
-          "accessToken"
-        );
-
-      const user = getStoredUser();
+      const user = response.data.user;
+      const token = response.data.accessToken;
+      const requiresRoleSelection =
+        response.data.requiresRoleSelection;
 
       set({
-        accessToken: token,
         user,
+        accessToken: token,
+        isAuthenticated: true,
+        loading: false,
       });
-    },
-  }));
+
+      return { user, requiresRoleSelection };
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
+
+  logout: async () => {
+    set({ loading: true });
+
+    try {
+      await logoutApi();
+    } finally {
+      set({
+        user: null,
+        accessToken: null,
+        selectedRole: null,
+        isAuthenticated: false,
+        loading: false,
+      });
+    }
+  },
+
+  fetchUser: async () => {
+    try {
+      const user = await getMe();
+
+      set({
+        user,
+        isAuthenticated: true,
+      });
+
+      return user;
+    } catch {
+      set({
+        user: null,
+        isAuthenticated: false,
+        accessToken: null,
+      });
+
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+      }
+
+      return null;
+    }
+  },
+
+  initialize: async () => {
+    if (get().initialized) return;
+
+    if (typeof window === "undefined") return;
+
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      set({ initialized: true });
+      return;
+    }
+
+    set({ accessToken: token, loading: true });
+
+    try {
+      const user = await getMe();
+
+      set({
+        user,
+        isAuthenticated: true,
+        initialized: true,
+        loading: false,
+      });
+    } catch {
+      localStorage.removeItem("accessToken");
+
+      set({
+        user: null,
+        accessToken: null,
+        isAuthenticated: false,
+        initialized: true,
+        loading: false,
+      });
+    }
+  },
+
+  hasRole: (role: UserRole) => {
+    const user = get().user;
+    return user?.roles?.includes(role) ?? false;
+  },
+}));
