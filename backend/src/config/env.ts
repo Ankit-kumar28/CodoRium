@@ -59,6 +59,12 @@ const envSchema = z.object({
 
   EMAIL_FROM_ADDRESS:
     z.string().email(),
+
+  RESEND_API_KEY:
+    z.string().optional(),
+
+  RESEND_FROM_EMAIL:
+    z.string().optional(),
 });
 const result =
   envSchema.safeParse(
