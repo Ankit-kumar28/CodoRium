@@ -102,6 +102,7 @@ const recentActivity = [
 export default function RoleDashboard({ role }: RoleDashboardProps) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const storeLogout = useAuthStore((state) => state.logout);
   const [profileOpen, setProfileOpen] = useState(false);
   const mounted = useSyncExternalStore(
     () => () => undefined,
@@ -111,7 +112,7 @@ export default function RoleDashboard({ role }: RoleDashboardProps) {
   const content = roleContent[role];
 
   async function handleLogout() {
-    await logout();
+    await storeLogout();
     window.location.replace("/login");
   }
 

@@ -42,7 +42,7 @@ const roleConfig: Record<UserRole, {
     description:
       "Create coding problems, test cases and contribute to the question bank.",
     icon: Code2,
-    path: "/dashboard/Problem%20Setter",
+    path: "/dashboard/problem-setter",
   },
 
   FACULTY: {
@@ -50,7 +50,7 @@ const roleConfig: Record<UserRole, {
     description:
       "Manage assessments, students and departmental coding activities.",
     icon: Users,
-    path: "/dashboard/Faculty",
+    path: "/dashboard/faculty",
   },
 
   ADMIN: {
