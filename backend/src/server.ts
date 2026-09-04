@@ -8,7 +8,7 @@ async function startServer() {
   );
 
   try {
-    await verifyEmailConnection();
+    // await verifyEmailConnection();  it taking timeout 
 
     app.listen(
       env.PORT,
