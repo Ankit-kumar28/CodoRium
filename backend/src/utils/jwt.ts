@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import type { SignOptions } from "jsonwebtoken";
 
 import { env } from "../config/env.js";
 
@@ -16,7 +17,7 @@ export function createAccessToken(
     {
       expiresIn:
         env.ACCESS_TOKEN_EXPIRES_IN,
-    } as jwt.SignOptions
+    } as SignOptions
   );
 }
 

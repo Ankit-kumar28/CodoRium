@@ -4,9 +4,9 @@ import { prisma } from "../src/config/database.js";
 import { hashPassword } from "../src/utils/password.js";
 
 async function main() {
-  const email = "admin@codorium.local";
+  const email = "admin@gmail.com";
 
-  const password = "Admin@123456";
+  const password = "admin@123";
 
   const passwordHash =
     await hashPassword(password);

@@ -4,10 +4,12 @@ import { env } from "../../config/env.js";
 
 import {
   passwordResetEmailTemplate,
+  credentialsEmailTemplate,
 } from "./email.templates.js";
 
 import type {
   SendPasswordResetEmailInput,
+  SendCredentialsEmailInput,
 } from "./email.types.js";
 
 const transporter =
@@ -65,4 +67,29 @@ export async function sendPasswordResetEmail(
   console.log(
     `📧 Password reset email sent to ${input.to}`
   );
+}
+
+export async function sendCredentialsEmail(
+  input: SendCredentialsEmailInput
+) {
+  const template = credentialsEmailTemplate({
+    firstName: input.firstName,
+    temporaryPassword: input.temporaryPassword,
+    roles: input.roles,
+  });
+
+  await transporter.sendMail({
+    from: {
+      name: env.EMAIL_FROM_NAME,
+      address: env.EMAIL_FROM_ADDRESS,
+    },
+    to: input.to,
+    subject: template.subject,
+    html: template.html.replace(
+      "EMAIL_PLACEHOLDER",
+      input.to
+    ),
+  });
+
+  console.log(`📧 Credentials email sent to ${input.to}`);
 }

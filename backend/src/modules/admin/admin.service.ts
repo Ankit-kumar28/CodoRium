@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 
 import { prisma } from "../../config/database.js";
 import { hashPassword } from "../../utils/password.js";
+import { sendCredentialsEmail } from "../../services/email/email.service.js";
 
 import type {
   GenerateCredentialsInput,
@@ -67,7 +68,7 @@ export async function generateCredentials(
     }
   );
 
-  return {
+  const result = {
     user: {
       id: user.id,
       firstName: user.firstName,
@@ -80,4 +81,13 @@ export async function generateCredentials(
 
     temporaryPassword,
   };
+
+  await sendCredentialsEmail({
+    to: result.user.email,
+    firstName: result.user.firstName,
+    temporaryPassword,
+    roles: result.user.roles,
+  });
+
+  return result;
 }

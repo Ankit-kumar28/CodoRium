@@ -147,3 +147,50 @@ export function passwordResetEmailTemplate({
 `,
   };
 }
+
+export function credentialsEmailTemplate({
+  firstName,
+  temporaryPassword,
+  roles,
+}: {
+  firstName: string;
+  temporaryPassword: string;
+  roles: string[];
+}) {
+  return {
+    subject: "Your credentials for CodoRium",
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a">
+  <div style="max-width:600px;margin:40px auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+    <div style="background:#0f172a;padding:24px;text-align:center;color:#fff">
+      <h1 style="margin:0">CodoRium</h1>
+    </div>
+    <div style="padding:32px">
+      <h2>Your credentials for CodoRium</h2>
+      <p>Hello ${firstName},</p>
+      <p>Your CodoRium account has been created by the college administration.</p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;line-height:1.8">
+        <strong>Email:</strong> ${toSafeText("EMAIL_PLACEHOLDER")}<br />
+        <strong>Temporary password:</strong> ${toSafeText(temporaryPassword)}<br />
+        <strong>Roles:</strong> ${toSafeText(roles.join(", "))}
+      </div>
+      <p style="margin-top:24px">Please sign in and change this temporary password immediately.</p>
+      <p style="font-size:12px;color:#64748b">This is an automated email from CodoRium.</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+  };
+}
+
+function toSafeText(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}

@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 
 import { env } from "./config/env.js";
 import { prisma } from "./config/database.js";
@@ -31,17 +30,6 @@ console.log(`✅ CORS enabled for: ${env.FRONTEND_URL}`);
 // JSON parser
 app.use(express.json({ limit: "1mb" }));
 console.log("✅ JSON body parser enabled");
-
-// Rate limiter
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 100,
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
-console.log("✅ Rate limiter enabled: 100 requests / 15 minutes");
 
 // Health check
 app.get("/health", async (_req, res) => {
