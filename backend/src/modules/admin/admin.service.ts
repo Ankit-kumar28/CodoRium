@@ -82,11 +82,16 @@ export async function generateCredentials(
     temporaryPassword,
   };
 
-  await sendCredentialsEmail({
+  void sendCredentialsEmail({
     to: result.user.email,
     firstName: result.user.firstName,
     temporaryPassword,
     roles: result.user.roles,
+  }).catch((error) => {
+    console.error(
+      `Credential email could not be delivered to ${result.user.email}:`,
+      error instanceof Error ? error.message : error
+    );
   });
 
   return result;

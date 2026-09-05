@@ -22,7 +22,22 @@ const transporter = nodemailer.createTransport({
     user: env.SMTP_USER,
     pass: env.SMTP_PASSWORD,
   },
+  connectionTimeout: 8000,
+  greetingTimeout: 8000,
+  socketTimeout: 10000,
 });
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error(`Email provider timed out after ${timeoutMs}ms`)),
+        timeoutMs
+      );
+    }),
+  ]);
+}
 
 export async function verifyEmailConnection() {
   if (resend) {
@@ -55,12 +70,12 @@ async function sendViaResend(to: string, subject: string, html: string): Promise
       env.RESEND_FROM_EMAIL ||
       `${env.EMAIL_FROM_NAME || "CodoRium"} <onboarding@resend.dev>`;
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await withTimeout(resend.emails.send({
       from: fromStr,
       to: [to],
       subject,
       html,
-    });
+    }), 10000);
 
     if (error) {
       console.error("❌ Resend SDK delivery error:", error);
@@ -97,7 +112,7 @@ export async function sendPasswordResetEmail(input: SendPasswordResetEmailInput)
 
   // Fallback to Nodemailer SMTP
   try {
-    await transporter.sendMail({
+    await withTimeout(transporter.sendMail({
       from: {
         name: env.EMAIL_FROM_NAME,
         address: env.EMAIL_FROM_ADDRESS,
@@ -105,7 +120,7 @@ export async function sendPasswordResetEmail(input: SendPasswordResetEmailInput)
       to: input.to,
       subject: template.subject,
       html: template.html,
-    });
+    }), 12000);
     console.log(`📧 Password reset email sent via SMTP to ${input.to}`);
   } catch (error) {
     console.error(`❌ SMTP delivery failed for ${input.to}:`, error instanceof Error ? error.message : error);
@@ -135,7 +150,7 @@ export async function sendCredentialsEmail(input: SendCredentialsEmailInput) {
 
   // Fallback to Nodemailer SMTP
   try {
-    await transporter.sendMail({
+    await withTimeout(transporter.sendMail({
       from: {
         name: env.EMAIL_FROM_NAME,
         address: env.EMAIL_FROM_ADDRESS,
@@ -143,7 +158,7 @@ export async function sendCredentialsEmail(input: SendCredentialsEmailInput) {
       to: input.to,
       subject: template.subject,
       html: htmlContent,
-    });
+    }), 12000);
     console.log(`📧 Credentials email sent via SMTP to ${input.to}`);
   } catch (error) {
     console.error(`❌ SMTP delivery failed for ${input.to}:`, error instanceof Error ? error.message : error);
